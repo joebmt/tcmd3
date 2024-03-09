@@ -1,0 +1,182 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module tcmd</title>
+<meta charset="utf-8">
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>tcmd</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/Users/joe/IdeaProjects/joe_python/tcmd/bin/tcmd.py">/Users/joe/IdeaProjects/joe_python/tcmd/bin/tcmd.py</a></font></td></tr></table>
+    <p><tt>#&nbsp;---<br>
+#&nbsp;&nbsp;&nbsp;tcmd&nbsp;-&nbsp;test&nbsp;a&nbsp;commands&nbsp;output&nbsp;against&nbsp;a&nbsp;regular&nbsp;expression<br>
+#&nbsp;---<br>
+#&nbsp;&nbsp;&nbsp;Usage:&nbsp;tcmd&nbsp;[Options]&nbsp;cmd&nbsp;regEx<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;====================================================================<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cmd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...........&nbsp;cmd&nbsp;to&nbsp;execute&nbsp;and&nbsp;test&nbsp;stdout,&nbsp;stderr,&nbsp;exit&nbsp;status<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;regEx&nbsp;&nbsp;&nbsp;&nbsp;...........&nbsp;regular&nbsp;expression&nbsp;to&nbsp;test&nbsp;the&nbsp;expected&nbsp;stdout&nbsp;of<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;command<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;====================================================================<br>
+#&nbsp;---<br>
+#&nbsp;&nbsp;&nbsp;Examples:<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcmd&nbsp;date&nbsp;2018&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;same&nbsp;as:&nbsp;date&nbsp;|&nbsp;grep&nbsp;-i&nbsp;2018<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcmd&nbsp;-c&nbsp;"date&nbsp;test"&nbsp;date&nbsp;2018<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;date&nbsp;|&nbsp;grep&nbsp;-i&nbsp;2018&nbsp;with&nbsp;a&nbsp;comment&nbsp;added&nbsp;to&nbsp;Pass/Fail&nbsp;lines<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;date&nbsp;|&nbsp;tcmd&nbsp;-s&nbsp;-c&nbsp;"cmd=date&nbsp;via&nbsp;--stdin"&nbsp;:&nbsp;2018<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;same&nbsp;as&nbsp;line&nbsp;above&nbsp;only&nbsp;using&nbsp;stdin&nbsp;and&nbsp;not&nbsp;testing&nbsp;return_code&nbsp;and&nbsp;stderr<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcmd&nbsp;-n&nbsp;date&nbsp;2016&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;date&nbsp;|&nbsp;grep&nbsp;-v&nbsp;2016&nbsp;(negate&nbsp;regEx&nbsp;test=Pass)<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcmd&nbsp;-d&nbsp;'cat&nbsp;/etc/hosts'&nbsp;'#|localhost'<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;cat&nbsp;/etc/hosts&nbsp;|&nbsp;egrep&nbsp;-i&nbsp;"#|localhost"<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcmd&nbsp;-d&nbsp;-v&nbsp;date&nbsp;2018&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;turn&nbsp;on&nbsp;debug&nbsp;and&nbsp;verbose&nbsp;output&nbsp;and&nbsp;check&nbsp;date&nbsp;cmd&nbsp;against&nbsp;regex&nbsp;2018<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcmd&nbsp;-v&nbsp;"touch&nbsp;myfile;&nbsp;test&nbsp;-f&nbsp;myfile&nbsp;&amp;&amp;&nbsp;rm&nbsp;-f&nbsp;myfile"&nbsp;&nbsp;""<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;sting&nbsp;multiple&nbsp;commands&nbsp;together&nbsp;with&nbsp;';'&nbsp;or&nbsp;&amp;&amp;&nbsp;or&nbsp;||<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OUT=$(cat&nbsp;/etc/hosts)<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;echo&nbsp;"$OUT"&nbsp;|&nbsp;tcmd&nbsp;--stdin&nbsp;-v&nbsp;-c&nbsp;"bash&nbsp;variable&nbsp;test"&nbsp;:&nbsp;localhost<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;echo&nbsp;"$OUT"&nbsp;|&nbsp;grep&nbsp;-i&nbsp;localhost&nbsp;(uses&nbsp;a&nbsp;bash&nbsp;variable&nbsp;w/--stdin)<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OUT=$(tcmd&nbsp;ping&nbsp;-c&nbsp;2&nbsp;localhost);&nbsp;RET=$?<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;[&nbsp;$RET&nbsp;-eq&nbsp;0&nbsp;]&nbsp;&amp;&amp;&nbsp;echo&nbsp;"tcmd&nbsp;returned&nbsp;0"&nbsp;||&nbsp;echo&nbsp;"tcmd&nbsp;did&nbsp;not&nbsp;return&nbsp;0"<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;how&nbsp;to&nbsp;run&nbsp;tcmd&nbsp;and&nbsp;capturing&nbsp;just&nbsp;PASS&nbsp;(0)&nbsp;or&nbsp;FAil&nbsp;(1)&nbsp;return&nbsp;code&nbsp;without<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;printing&nbsp;tcmd&nbsp;output&nbsp;to&nbsp;stdout<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcmd&nbsp;-h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;this&nbsp;help&nbsp;message<br>
+#<br>
+#&nbsp;---<br>
+#&nbsp;&nbsp;&nbsp;Notes:<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.&nbsp;You&nbsp;can&nbsp;specify&nbsp;regEx&nbsp;as&nbsp;"",&nbsp;"^$",&nbsp;or&nbsp;"\A\z"&nbsp;for&nbsp;the&nbsp;empty&nbsp;string<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.&nbsp;regex&nbsp;matches&nbsp;re.MULTILINE&nbsp;and&nbsp;re.DOTALL&nbsp;(matches&nbsp;across&nbsp;multilines&nbsp;with&nbsp;".")<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.&nbsp;This&nbsp;program&nbsp;only&nbsp;tested&nbsp;on&nbsp;python&nbsp;2.7<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.&nbsp;This&nbsp;program&nbsp;requires&nbsp;textwrap&nbsp;and&nbsp;click&nbsp;python&nbsp;modules&nbsp;to&nbsp;be&nbsp;installed<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Run:&nbsp;'pip&nbsp;install&nbsp;-r&nbsp;inc/requirements.txt'&nbsp;to&nbsp;install&nbsp;these&nbsp;two&nbsp;modules<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.&nbsp;See&nbsp;tests/test_tcmd.sh&nbsp;for&nbsp;more&nbsp;examples&nbsp;of&nbsp;syntax<br>
+#<br>
+#&nbsp;&nbsp;&nbsp;Warning:<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.&nbsp;You&nbsp;have&nbsp;to&nbsp;backslash&nbsp;regular&nbsp;expression&nbsp;meta&nbsp;chars&nbsp;on&nbsp;command&nbsp;line&nbsp;if&nbsp;you&nbsp;want&nbsp;them<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to&nbsp;be&nbsp;interpreted&nbsp;as&nbsp;literal&nbsp;characters&nbsp;in&nbsp;the&nbsp;regex<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(tcmd&nbsp;does&nbsp;not&nbsp;escape&nbsp;the&nbsp;metachars&nbsp;for&nbsp;you&nbsp;unless&nbsp;you&nbsp;use&nbsp;the&nbsp;--backslash&nbsp;option)<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;For&nbsp;example,&nbsp;use:<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcmd&nbsp;-v&nbsp;'echo&nbsp;"add&nbsp;x+y"'&nbsp;"add&nbsp;x\+y"<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(^&nbsp;backslashed&nbsp;the&nbsp;'+'&nbsp;regex&nbsp;metachar)<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;instead&nbsp;of<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcmd&nbsp;-v&nbsp;'echo&nbsp;"add&nbsp;x+y"'&nbsp;"add&nbsp;x+y"<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Python&nbsp;regex&nbsp;metachars:<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Escape&nbsp;special&nbsp;char&nbsp;or&nbsp;start&nbsp;a&nbsp;sequence.<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Match&nbsp;any&nbsp;char&nbsp;except&nbsp;newline,&nbsp;see&nbsp;re.DOTALL<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Match&nbsp;start&nbsp;of&nbsp;the&nbsp;string,&nbsp;see&nbsp;re.MULTILINE<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Match&nbsp;end&nbsp;of&nbsp;the&nbsp;string,&nbsp;see&nbsp;re.MULTILINE<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enclose&nbsp;a&nbsp;set&nbsp;of&nbsp;matchable&nbsp;chars<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R|S&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Match&nbsp;either&nbsp;regex&nbsp;R&nbsp;or&nbsp;regex&nbsp;S.<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Create&nbsp;capture&nbsp;group,&nbsp;&amp;&nbsp;indicate&nbsp;precedence<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;or&nbsp;more.&nbsp;Same&nbsp;as&nbsp;{,}<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;or&nbsp;more.&nbsp;Same&nbsp;as&nbsp;{1,}<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;or&nbsp;1.&nbsp;Same&nbsp;as&nbsp;{,1}<br>
+#<br>
+#&nbsp;Options:<br>
+#&nbsp;&nbsp;&nbsp;-d,&nbsp;--dbg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Turn&nbsp;debug&nbsp;output&nbsp;on<br>
+#&nbsp;&nbsp;&nbsp;-e,&nbsp;--error&nbsp;&lt;text&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stderr&nbsp;compared&nbsp;to&nbsp;regex<br>
+#&nbsp;&nbsp;&nbsp;-n,&nbsp;--negate&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Opposite&nbsp;(negate)&nbsp;regex&nbsp;operator&nbsp;like&nbsp;grep&nbsp;-v<br>
+#&nbsp;&nbsp;&nbsp;-c,&nbsp;--comment&nbsp;&lt;text&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Add&nbsp;a&nbsp;comment&nbsp;to&nbsp;Pass/Fail&nbsp;lines<br>
+#&nbsp;&nbsp;&nbsp;-s,&nbsp;--stdin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pipe&nbsp;stdin&nbsp;as&nbsp;cmd&nbsp;subsitute&nbsp;with&nbsp;:<br>
+#&nbsp;&nbsp;&nbsp;-r,&nbsp;--return_code&nbsp;&lt;text&gt;&nbsp;&nbsp;The&nbsp;return&nbsp;status&nbsp;compared&nbsp;to&nbsp;regex<br>
+#&nbsp;&nbsp;&nbsp;-v,&nbsp;--verbose&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Turn&nbsp;verbose&nbsp;output&nbsp;on<br>
+#&nbsp;&nbsp;&nbsp;-p,&nbsp;--pydoc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Generate&nbsp;pydoc<br>
+#&nbsp;&nbsp;&nbsp;-t,&nbsp;--timer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Report&nbsp;Execution&nbsp;time&nbsp;in&nbsp;seconds<br>
+#&nbsp;&nbsp;&nbsp;-b,&nbsp;--backslash&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Backslash&nbsp;all&nbsp;regex&nbsp;meta&nbsp;chars<br>
+#&nbsp;&nbsp;&nbsp;-m,&nbsp;--min&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Print&nbsp;only&nbsp;minimum&nbsp;one&nbsp;line&nbsp;Pass&nbsp;or&nbsp;Fail&nbsp;except&nbsp;if<br>
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--dbg<br>
+#&nbsp;&nbsp;&nbsp;-h,&nbsp;--help&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This&nbsp;usage&nbsp;message<br>
+#<br>
+#&nbsp;Author:<br>
+#&nbsp;&nbsp;&nbsp;Joe&nbsp;Orzehoski<br>
+#<br>
+#&nbsp;License:<br>
+#&nbsp;&nbsp;&nbsp;See&nbsp;readme.md&nbsp;file&nbsp;using&nbsp;Apache&nbsp;2.0&nbsp;License<br>
+#&nbsp;---<br>
+#&nbsp;Todo:<br>
+#&nbsp;&nbsp;&nbsp;1.&nbsp;Add&nbsp;stdin&nbsp;error&nbsp;with&nbsp;negate&nbsp;option<br>
+#&nbsp;&nbsp;&nbsp;2.&nbsp;Add&nbsp;a&nbsp;return&nbsp;of&nbsp;1&nbsp;or&nbsp;0&nbsp;inside&nbsp;tests/t*.sh<br>
+#&nbsp;&nbsp;&nbsp;3.&nbsp;Make&nbsp;tcmd&nbsp;into&nbsp;a&nbsp;module&nbsp;so&nbsp;it&nbsp;can&nbsp;be&nbsp;installed&nbsp;(use&nbsp;setup.py)<br>
+#&nbsp;---</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="click.html">click</a><br>
+<a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="pydoc.html">pydoc</a><br>
+<a href="regex.html">regex</a><br>
+</td><td width="25%" valign=top><a href="subprocess.html">subprocess</a><br>
+<a href="sys.html">sys</a><br>
+</td><td width="25%" valign=top><a href="textwrap.html">textwrap</a><br>
+<a href="traceback.html">traceback</a><br>
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-create_pydocs"><strong>create_pydocs</strong></a>()</dt><dd><tt><a href="#-create_pydocs">create_pydocs</a>()&nbsp;-&nbsp;generate&nbsp;pydoc&nbsp;inside&nbsp;a&nbsp;directory&nbsp;pydocs&nbsp;in&nbsp;the&nbsp;current&nbsp;directory<br>
+:return:&nbsp;None</tt></dd></dl>
+ <dl><dt><a name="-escape_regex"><strong>escape_regex</strong></a>(regex)</dt><dd><tt>Escape&nbsp;regex&nbsp;metachars&nbsp;so&nbsp;user&nbsp;does&nbsp;not&nbsp;have&nbsp;to&nbsp;backslash&nbsp;them&nbsp;on&nbsp;command&nbsp;line<br>
+&nbsp;<br>
+:param&nbsp;regex:&nbsp;The&nbsp;regular&nbsp;expression&nbsp;to&nbsp;backslash&nbsp;metachars&nbsp;in<br>
+&nbsp;<br>
+:return:&nbsp;Properly&nbsp;backslashed&nbsp;regular&nbsp;expression&nbsp;metachars&nbsp;in&nbsp;regex</tt></dd></dl>
+ <dl><dt><a name="-exit"><strong>exit</strong></a>(...)</dt><dd><tt><a href="#-exit">exit</a>([status])<br>
+&nbsp;<br>
+Exit&nbsp;the&nbsp;interpreter&nbsp;by&nbsp;raising&nbsp;SystemExit(status).<br>
+If&nbsp;the&nbsp;status&nbsp;is&nbsp;omitted&nbsp;or&nbsp;None,&nbsp;it&nbsp;defaults&nbsp;to&nbsp;zero&nbsp;(i.e.,&nbsp;success).<br>
+If&nbsp;the&nbsp;status&nbsp;is&nbsp;an&nbsp;integer,&nbsp;it&nbsp;will&nbsp;be&nbsp;used&nbsp;as&nbsp;the&nbsp;system&nbsp;exit&nbsp;status.<br>
+If&nbsp;it&nbsp;is&nbsp;another&nbsp;kind&nbsp;of&nbsp;object,&nbsp;it&nbsp;will&nbsp;be&nbsp;printed&nbsp;and&nbsp;the&nbsp;system<br>
+exit&nbsp;status&nbsp;will&nbsp;be&nbsp;one&nbsp;(i.e.,&nbsp;failure).</tt></dd></dl>
+ <dl><dt><a name="-get_help_msg"><strong>get_help_msg</strong></a>(command)</dt><dd><tt>Print&nbsp;full&nbsp;help&nbsp;message&nbsp;of&nbsp;click&nbsp;def&nbsp;&lt;function&gt;<br>
+&nbsp;<br>
+Ex:&nbsp;print_help_msg(testcmd)<br>
+&nbsp;<br>
+:param&nbsp;command:&nbsp;function&nbsp;that&nbsp;has&nbsp;the&nbsp;click&nbsp;command&nbsp;decorator&nbsp;and&nbsp;help&nbsp;option<br>
+:return:&nbsp;a&nbsp;string&nbsp;containting&nbsp;the&nbsp;@click.command()&nbsp;&lt;function&gt;&nbsp;help&nbsp;message</tt></dd></dl>
+ <dl><dt><a name="-indent"><strong>indent</strong></a>(text, nspaces, ch<font color="#909090">=' '</font>)</dt><dd><tt>Indent&nbsp;every&nbsp;line&nbsp;of&nbsp;the&nbsp;text&nbsp;string&nbsp;nspaces<br>
+&nbsp;<br>
+:param&nbsp;text:&nbsp;&nbsp;&nbsp;&nbsp;Text&nbsp;string&nbsp;to&nbsp;be&nbsp;indented&nbsp;nspaces&nbsp;amount<br>
+:param&nbsp;nspaces:&nbsp;Amount&nbsp;spaces&nbsp;to&nbsp;indent<br>
+:param&nbsp;ch:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;space&nbsp;char&nbsp;or&nbsp;another&nbsp;char&nbsp;to&nbsp;prepend&nbsp;to&nbsp;the&nbsp;indent<br>
+:return:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;new&nbsp;indented&nbsp;string</tt></dd></dl>
+ <dl><dt><a name="-pindent"><strong>pindent</strong></a>(msg, nspaces<font color="#909090">=6</font>, line_width<font color="#909090">=180</font>)</dt><dd><tt>Prints&nbsp;every&nbsp;line&nbsp;of&nbsp;the&nbsp;text&nbsp;msg&nbsp;indented&nbsp;nspaces<br>
+&nbsp;<br>
+:param&nbsp;msg:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;text&nbsp;string&nbsp;to&nbsp;be&nbsp;indented&nbsp;nspaces&nbsp;amount<br>
+:param&nbsp;nspaces:&nbsp;&nbsp;&nbsp;&nbsp;Amount&nbsp;of&nbsp;spaces&nbsp;to&nbsp;indent<br>
+:param&nbsp;line_width:&nbsp;Not&nbsp;used&nbsp;anymore</tt></dd></dl>
+ <dl><dt><a name="-timetime"><strong>timetime</strong></a> = time(...)</dt><dd><tt>time()&nbsp;-&gt;&nbsp;floating&nbsp;point&nbsp;number<br>
+&nbsp;<br>
+Return&nbsp;the&nbsp;current&nbsp;time&nbsp;in&nbsp;seconds&nbsp;since&nbsp;the&nbsp;Epoch.<br>
+Fractions&nbsp;of&nbsp;a&nbsp;second&nbsp;may&nbsp;be&nbsp;present&nbsp;if&nbsp;the&nbsp;system&nbsp;clock&nbsp;provides&nbsp;them.</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>CONTEXT_SETTINGS</strong> = {'help_option_names': ['-h', '--help']}<br>
+<strong>DBG</strong> = 0<br>
+<strong>MAXYEAR</strong> = 9999<br>
+<strong>MINYEAR</strong> = 1<br>
+<strong>datetime_CAPI</strong> = &lt;capsule object "datetime.datetime_CAPI"&gt;<br>
+<strong>testcmd</strong> = &lt;click.core.Command object&gt;</td></tr></table>
+</body></html>

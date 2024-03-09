@@ -1,0 +1,10 @@
+# ---
+# This file contains the python modules that need to be installed for tcmd to work.
+# Run:
+#   pip install -r requirements.txt
+# ---
+click
+pydocs
+regex
+pyinstaller
+# textwrap
